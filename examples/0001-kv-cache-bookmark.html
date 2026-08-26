@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KV cache 書籤：為什麼重試會火上加油</title>
+<style>
+  :root {
+    --ink: #1a1a2e; --paper: #fdfdfb; --accent: #0f766e;
+    --wrong: #b91c1c; --right: #15803d; --line: #d6d3cd;
+    --soft: #f4f3ef; --muted: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    color: var(--ink); background: var(--paper);
+    max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 4rem;
+    line-height: 1.75; font-size: 17px;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: .75rem; margin-bottom: 1.5rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 .35rem; }
+  .meta { color: var(--muted); font-size: .85rem; }
+  h2 { font-size: 1.1rem; margin-top: 2.25rem; color: var(--accent); }
+  .symptom {
+    background: var(--soft); border-left: 4px solid var(--ink);
+    padding: .8rem 1rem; font-family: ui-monospace, Menlo, monospace;
+    font-size: .85rem; white-space: pre-wrap; word-break: break-all;
+  }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.15rem; margin: .9rem 0; cursor: pointer; }
+  .card summary, .card .q { font-weight: 600; }
+  .card .hint { color: var(--muted); font-size: .82rem; }
+  .card .answer { display: none; margin-top: .7rem; padding-top: .7rem; border-top: 1px dashed var(--line); }
+  .card.open .answer { display: block; }
+  .card.open .hint { display: none; }
+  .quiz .opt {
+    display: block; width: 100%; text-align: left; margin: .45rem 0;
+    padding: .65rem .9rem; border: 1px solid var(--line); border-radius: 8px;
+    background: #fff; font-size: .95rem; cursor: pointer; font-family: inherit; line-height: 1.5;
+  }
+  .quiz .opt:hover { border-color: var(--accent); }
+  .quiz .opt.right { border-color: var(--right); background: #f0fdf4; }
+  .quiz .opt.wrong { border-color: var(--wrong); background: #fef2f2; }
+  .quiz .explain { display: none; margin-top: .8rem; padding: .8rem 1rem; background: var(--soft); border-radius: 8px; font-size: .92rem; }
+  .quiz.done .explain { display: block; }
+  .match .tok { background: #fefce8; border-bottom: 2px dotted #ca8a04; cursor: pointer; padding: 0 .15em; }
+  .match .tok.on { background: #fde68a; }
+  .match .meaning { display: none; margin: .5rem 0 0; font-size: .88rem; color: var(--ink); }
+  .match .meaning.show { display: block; }
+  .fillrow { display: flex; gap: .5rem; margin-top: .8rem; flex-wrap: wrap; }
+  .fillrow input {
+    flex: 1 1 14rem; padding: .55rem .8rem; border: 1px solid var(--line);
+    border-radius: 8px; font-size: .95rem; font-family: inherit;
+  }
+  .fillrow button, .retrybtn {
+    padding: .55rem 1.1rem; border: none; border-radius: 8px;
+    background: var(--accent); color: #fff; font-size: .95rem; cursor: pointer; font-family: inherit;
+  }
+  .verdict { margin-top: .6rem; font-size: .9rem; min-height: 1.4em; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+  @media print {
+    body { max-width: none; font-size: 12pt; }
+    .card .hint, button, .fillrow { display: none !important; }
+    .card .answer, .quiz .explain, .match .meaning { display: block !important; }
+    .card, .quiz .opt { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>KV cache 書籤：為什麼重試會火上加油</h1>
+  <div class="meta">2026-08-26 · lazy-teach 微課 · local-llm</div>
+</header>
+
+<h2>事發現場</h2>
+<p>Qwen3.8-27B 本地除錯現場：輸出無限循環。log 裡躺著一條鐵證——而客戶端的自動重試，正在悄悄拆自己的台。</p>
+<div class="symptom">事故當時，那個 slot 的 KV cache 已經揹著 172,573 tokens 的歷史（log 鐵證）。Hermes 重試時會微調訊息內容（追加錯誤說明、重新包裝），導致新請求和舊快取的「共同前綴」對不齊。</div>
+
+<h2>那個洞</h2>
+<p>llama-server 收到長請求時，會把每個 token「讀懂」的中間結果存起來——這就是 KV cache。下一個請求進來，它做一件事：<strong>從第一個 token 開始逐字比對</strong>，一模一樣的開頭直接沿用舊功課，只算新增的部分。這個能比對的開頭叫<strong>共同前綴</strong>。它像一本讀到一半的書夾了書籤：只要前面的字一模一樣，翻開就能續讀；任何一個字不同，書籤作廢，從那一頁起重算。</p>
+
+<h2>先想，再翻</h2>
+<div class="card" onclick="this.classList.toggle('open')">
+  <div class="q">KV cache 存的是什麼？</div>
+  <div class="hint">心裡答完再點開</div>
+  <div class="answer">每個 token 讀懂後的<strong>中間計算結果</strong>——「到目前為止讀過的序列＋每個 token 的理解」。不是輸出文字本身。</div>
+</div>
+<div class="card" onclick="this.classList.toggle('open')">
+  <div class="q">為什麼請求開頭只變一個字，整段快取就作廢？</div>
+  <div class="hint">心裡答完再點開</div>
+  <div class="answer">沿用靠<strong>逐字比對共同前綴</strong>：第一個不同的字之後，所有位置的理解都建立在錯的前文上，只能整段重算。</div>
+</div>
+<div class="card" onclick="this.classList.toggle('open')">
+  <div class="q">自動重試為什麼會火上加油？</div>
+  <div class="hint">心裡答完再點開</div>
+  <div class="answer">重試時客戶端會<strong>追加錯誤說明、重新包裝訊息</strong>——善意的小修改正好切斷前綴，快取全滅，輸出更慢更長，退化更嚴重。</div>
+</div>
+
+<h2>回憶測驗</h2>
+<div class="quiz" data-a="0">
+  <p class="q">server 收到新請求時，決定哪些快取能沿用的機制是？</p>
+  <button class="opt">逐字比對新請求與快取的共同前綴</button>
+  <button class="opt">依照請求送達順序找出最近的快取</button>
+  <button class="opt">用語意相似度比對最接近的快取</button>
+  <div class="explain">目標：判斷快取能否沿用。常見錯誤模式：以為 server「聰明地」記得語意——它只認位元組級的一模一樣。下一步：回去看事發現場那句「對不齊」，現在應該能自己講出機制。</div>
+</div>
+
+<h2>症狀比對</h2>
+<p>回到開頭那段真實 log——點擊黃底關鍵詞，確認你會對位。</p>
+<div class="match">
+  <div class="symptom">事故當時，那個 slot 的 KV cache 已經揹著 <span class="tok" data-m="m1">172,573 tokens</span> 的歷史（log 鐵證）。Hermes 重試時會<span class="tok" data-m="m2">微調訊息內容</span>（追加錯誤說明、重新包裝），導致新請求和舊快取的「<span class="tok" data-m="m3">共同前綴</span>」對不齊。</div>
+  <div class="meaning" id="m1"><strong>172,573 tokens：</strong>歷史這麼長，代表 prefill 快取已是最大資產——打掉一次，重算代價以分鐘計。</div>
+  <div class="meaning" id="m2"><strong>微調訊息內容：</strong>重試的好意修改正是前綴殺手——任何一個字的差異都從那裡切斷沿用。</div>
+  <div class="meaning" id="m3"><strong>共同前綴：</strong>快取沿用的唯一通行證：新舊請求開頭逐字一致的部分。</div>
+</div>
+<p style="margin-top:1.2rem">不看上文，用一句話寫下：<strong>這次擋路的是什麼？下次遇到先查什麼？</strong></p>
+<div class="fillrow">
+  <input type="text" id="fillin" placeholder="一句話……">
+  <button onclick="checkFill()">對照結論</button>
+</div>
+<div class="verdict" id="verdict"></div>
+
+<footer>
+  結論已存入 <code>CONCLUSIONS.md</code>。三天後憑記憶重講一次這個洞——費力的回想才算數。<br>
+  有不清楚的地方，回到對話問你的老師。
+</footer>
+
+<script>
+document.querySelectorAll('.quiz').forEach(function(q){
+  var correct = parseInt(q.dataset.a, 10);
+  q.querySelectorAll('.opt').forEach(function(btn, i){
+    btn.addEventListener('click', function(){
+      if (q.classList.contains('done')) return;
+      q.classList.add('done');
+      btn.classList.add(i === correct ? 'right' : 'wrong');
+      if (i !== correct) q.querySelectorAll('.opt')[correct].classList.add('right');
+    });
+  });
+});
+document.querySelectorAll('.tok').forEach(function(t){
+  t.addEventListener('click', function(){
+    t.classList.toggle('on');
+    var m = document.getElementById(t.dataset.m);
+    if (m) m.classList.toggle('show');
+  });
+});
+function checkFill(){
+  var v = (document.getElementById('fillin').value || '').trim();
+  var out = document.getElementById('verdict');
+  var keys = ["前綴", "快取", "cache"];
+  if (!v) { out.textContent = '先憑記憶寫，寫錯才是有用的資料。'; return; }
+  var hit = keys.filter(function(k){ return v.indexOf(k) !== -1; }).length;
+  out.innerHTML = hit >= Math.ceil(keys.length/2)
+    ? '<span style="color:var(--right)">命中核心——對照 CONCLUSIONS.md 的原句，補上你漏的字眼。</span>'
+    : '<span style="color:var(--wrong)">還沒到核心。翻開 CONCLUSIONS.md 找到這條結論，讀完後闔上，重寫一次。</span>';
+}
+</script>
+</body>
+</html>

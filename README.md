@@ -109,9 +109,15 @@ On every launch it offers (never forces) a 60-second recall warm-up of the concl
 
 Grounded in: Roediger & Karpicke 2006 (retrieval practice), Hattie & Timperley 2007 (feedback), Sweller et al. 2019 (cognitive load).
 
-## Battle-tested
+## Try a real lesson — right now
 
-Lesson 0001 was distilled from a real debugging session: a local Qwen3.8-27B stuck in an infinite output loop, traced through greedy-decoding degeneration and a KV-cache shared-prefix misalignment — 172,573 tokens of cached history destroyed by one well-meaning retry that rewrote the prompt. The method worked before it was packaged.
+<div align="center">
+
+**[▶ Open Lesson 0001 · “KV cache bookmark”](https://zakk1024.github.io/zack-skill-lazy-teach/examples/0001-kv-cache-bookmark.html)**
+
+</div>
+
+Distilled from a genuine debugging session: a local Qwen3.8-27B stuck in an infinite output loop, traced through greedy-decoding degeneration and a KV-cache shared-prefix misalignment — **172,573 tokens** of cached history destroyed by one well-meaning retry that rewrote the prompt. Click through the reveal cards, take the quiz, tap the highlighted terms, write your one-sentence conclusion. It is one self-contained HTML file with zero dependencies — exactly what distill mode produces ([source](examples/0001-kv-cache-bookmark.html)).
 
 ## 中文簡介
 
