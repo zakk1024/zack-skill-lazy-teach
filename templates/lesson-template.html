@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<!--
+  lazy-teach 微課模板（變體：單一洞、症狀錨點）
+  使用法：複製本檔 → 取代所有 {{PLACEHOLDER}} → 刪除本註解。
+  規則：自包含零依賴；繁中；只教一個洞；
+       測驗選項等長（不讓格式洩漏答案）；
+       列印時答案自動展開成研讀卡。
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{LESSON_TITLE}}</title>
+<style>
+  :root {
+    --ink: #1a1a2e; --paper: #fdfdfb; --accent: #0f766e;
+    --wrong: #b91c1c; --right: #15803d; --line: #d6d3cd;
+    --soft: #f4f3ef; --muted: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    color: var(--ink); background: var(--paper);
+    max-width: 46rem; margin: 0 auto; padding: 2rem 1.25rem 4rem;
+    line-height: 1.75; font-size: 17px;
+  }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: .75rem; margin-bottom: 1.5rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 .35rem; }
+  .meta { color: var(--muted); font-size: .85rem; }
+  h2 { font-size: 1.1rem; margin-top: 2.25rem; color: var(--accent); }
+  .symptom {
+    background: var(--soft); border-left: 4px solid var(--ink);
+    padding: .8rem 1rem; font-family: ui-monospace, Menlo, monospace;
+    font-size: .85rem; white-space: pre-wrap; word-break: break-all;
+  }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.15rem; margin: .9rem 0; cursor: pointer; }
+  .card summary, .card .q { font-weight: 600; }
+  .card .hint { color: var(--muted); font-size: .82rem; }
+  .card .answer { display: none; margin-top: .7rem; padding-top: .7rem; border-top: 1px dashed var(--line); }
+  .card.open .answer { display: block; }
+  .card.open .hint { display: none; }
+  .quiz .opt {
+    display: block; width: 100%; text-align: left; margin: .45rem 0;
+    padding: .65rem .9rem; border: 1px solid var(--line); border-radius: 8px;
+    background: #fff; font-size: .95rem; cursor: pointer; font-family: inherit; line-height: 1.5;
+  }
+  .quiz .opt:hover { border-color: var(--accent); }
+  .quiz .opt.right { border-color: var(--right); background: #f0fdf4; }
+  .quiz .opt.wrong { border-color: var(--wrong); background: #fef2f2; }
+  .quiz .explain { display: none; margin-top: .8rem; padding: .8rem 1rem; background: var(--soft); border-radius: 8px; font-size: .92rem; }
+  .quiz.done .explain { display: block; }
+  .match .tok { background: #fefce8; border-bottom: 2px dotted #ca8a04; cursor: pointer; padding: 0 .15em; }
+  .match .tok.on { background: #fde68a; }
+  .match .meaning { display: none; margin: .5rem 0 0; font-size: .88rem; color: var(--ink); }
+  .match .meaning.show { display: block; }
+  .fillrow { display: flex; gap: .5rem; margin-top: .8rem; flex-wrap: wrap; }
+  .fillrow input {
+    flex: 1 1 14rem; padding: .55rem .8rem; border: 1px solid var(--line);
+    border-radius: 8px; font-size: .95rem; font-family: inherit;
+  }
+  .fillrow button, .retrybtn {
+    padding: .55rem 1.1rem; border: none; border-radius: 8px;
+    background: var(--accent); color: #fff; font-size: .95rem; cursor: pointer; font-family: inherit;
+  }
+  .verdict { margin-top: .6rem; font-size: .9rem; min-height: 1.4em; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+  @media print {
+    body { max-width: none; font-size: 12pt; }
+    .card .hint, button, .fillrow { display: none !important; }
+    .card .answer, .quiz .explain, .match .meaning { display: block !important; }
+    .card, .quiz .opt { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>{{LESSON_TITLE}}</h1>
+  <div class="meta">{{DATE}} · lazy-teach 微課 · {{TOPIC_TAG}}</div>
+</header>
+
+<h2>事發現場</h2>
+<p>{{ONE_LINE_STORY}}</p>
+<div class="symptom">{{VERBATIM_SYMPTOM}}</div>
+
+<h2>那個洞</h2>
+<p>{{CORE_CONCEPT_2_TO_4_SENTENCES}}</p>
+
+<h2>先想，再翻</h2>
+<!-- 2–3 張揭示卡：問題要逼召回，不是辨識 -->
+<div class="card" onclick="this.classList.toggle('open')">
+  <div class="q">{{RECALL_Q1}}</div>
+  <div class="hint">心裡答完再點開</div>
+  <div class="answer">{{A1}}</div>
+</div>
+<div class="card" onclick="this.classList.toggle('open')">
+  <div class="q">{{RECALL_Q2}}</div>
+  <div class="hint">心裡答完再點開</div>
+  <div class="answer">{{A2}}</div>
+</div>
+<div class="card" onclick="this.classList.toggle('open')">
+  <div class="q">{{RECALL_Q3}}</div>
+  <div class="hint">心裡答完再點開</div>
+  <div class="answer">{{A3}}</div>
+</div>
+
+<h2>回憶測驗</h2>
+<!-- 選項務求等長；正確選項填在 data-a -->
+<div class="quiz" data-a="{{QUIZ_CORRECT_INDEX}}">
+  <p class="q">{{QUIZ_QUESTION}}</p>
+  <button class="opt">{{OPT_A}}</button>
+  <button class="opt">{{OPT_B}}</button>
+  <button class="opt">{{OPT_C}}</button>
+  <div class="explain">{{QUIZ_EXPLANATION}}</div>
+</div>
+
+<h2>症狀比對</h2>
+<p>回到開頭那段真實輸出——點擊黃底關鍵詞，確認你會對位。</p>
+<div class="match">
+  <!-- 把症狀原文重貼一次，把要考的片段包進 <span class="tok" data-m="m1">…</span> -->
+  <div class="symptom">{{SYMPTOM_WITH_TOKS}}</div>
+  <div class="meaning" id="m1"><strong>{{TOK1}}：</strong>{{MEANING1}}</div>
+  <div class="meaning" id="m2"><strong>{{TOK2}}：</strong>{{MEANING2}}</div>
+</div>
+<p style="margin-top:1.2rem">不看上文，用一句話寫下：<strong>這次擋路的是什麼？下次遇到先查什麼？</strong></p>
+<div class="fillrow">
+  <input type="text" id="fillin" placeholder="一句話……">
+  <button onclick="checkFill()">對照結論</button>
+</div>
+<div class="verdict" id="verdict"></div>
+
+<footer>
+  結論已存入 <code>CONCLUSIONS.md</code>。三天後憑記憶重講一次這個洞——費力的回想才算數。<br>
+  有不清楚的地方，回到對話問你的老師。
+</footer>
+
+<script>
+// 測驗：即時對錯＋解析展開（feedback triad：對錯→哪個模式→下一步）
+document.querySelectorAll('.quiz').forEach(function(q){
+  var correct = parseInt(q.dataset.a, 10);
+  q.querySelectorAll('.opt').forEach(function(btn, i){
+    btn.addEventListener('click', function(){
+      if (q.classList.contains('done')) return;
+      q.classList.add('done');
+      btn.classList.add(i === correct ? 'right' : 'wrong');
+      if (i !== correct) q.querySelectorAll('.opt')[correct].classList.add('right');
+    });
+  });
+});
+// 症狀比對：點關鍵詞顯示對位解釋
+document.querySelectorAll('.tok').forEach(function(t){
+  t.addEventListener('click', function(){
+    t.classList.toggle('on');
+    var m = document.getElementById(t.dataset.m);
+    if (m) m.classList.toggle('show');
+  });
+});
+// 填空比對：寬鬆比對關鍵詞，給三段式回饋
+function checkFill(){
+  var v = (document.getElementById('fillin').value || '').trim();
+  var out = document.getElementById('verdict');
+  var keys = [{{FILL_KEYWORDS_JS_ARRAY}}];
+  if (!v) { out.textContent = '先憑記憶寫，寫錯才是有用的資料。'; return; }
+  var hit = keys.filter(function(k){ return v.indexOf(k) !== -1; }).length;
+  out.innerHTML = hit >= Math.ceil(keys.length/2)
+    ? '<span style="color:var(--right)">命中核心——對照 CONCLUSIONS.md 的原句，補上你漏的字眼。</span>'
+    : '<span style="color:var(--wrong)">還沒到核心。翻開 CONCLUSIONS.md 找到這條結論，讀完後闔上，重寫一次。</span>';
+}
+</script>
+</body>
+</html>
