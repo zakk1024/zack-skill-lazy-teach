@@ -26,19 +26,23 @@ argument-hint: "<問題描述（可省略）>"
 ├── INDEX.md            # 問題清單＋狀態＋主題計數（畢業追蹤靠它）
 ├── CONCLUSIONS.md      # 跨問題結論索引，一行一結論
 └── NNNN-slug/          # 編號全域遞增
-    ├── PROBLEM.md      # 症狀逐字原文＋環境＋blocking question（若有）
-    ├── LOOP.md         # append-only 迴圈日誌
-    └── lesson.html     # 互動微課（僅 distill 時產出）
+    ├── PROBLEM.md      # 症狀逐字原文＋環境＋one win／blocking question
+    ├── LOOP.md         # append-only 迴圈日誌(Orient 落樁建立,收尾結卷)
+    └── lesson.html     # 互動微課(收尾結算產出,並自動開啟)
 ```
 
 首次啟動建立 `INDEX.md` 與 `CONCLUSIONS.md`；之後每個問題一個資料夾。
 
 ## 迴圈流程（loop mode）
 
-### 1. Orient（定向）
+### 1. Orient（定向＋落樁）
 
-把問題釘死再動手：症狀**逐字**抄下（錯誤原文，不轉述）、環境（版本／OS／相關設定）、已試過什麼與結果。寫入 `PROBLEM.md`。
-✅ 完成判準：`PROBLEM.md` 存在，含逐字症狀。
+建立案卷資料夾 `NNNN-slug/`，一次立起兩個檔案——**結構先於紀律**：檔案從第一分鐘就存在，收尾才不會缺。
+
+- `PROBLEM.md`：症狀**逐字**抄下（錯誤原文，不轉述）、環境（版本／OS／相關設定）、已試過什麼與結果。
+- `LOOP.md`：建立骨架（`## 假設`／`## 實測`／`## 觀察` 三段標頭）——之後每一拍都 append 進來，收尾時它必須是「結完卷」的狀態。
+
+✅ 完成判準：兩檔皆存在；`PROBLEM.md` 含逐字症狀。
 
 ### 2. Hypothesis（假設）
 
@@ -69,26 +73,27 @@ argument-hint: "<問題描述（可省略）>"
 
 修改的是假設，不是指令本身——指令只是假設的影子。回到第 2 步。
 
-### 出口：deliberate close（hard gate）
+### 出口：deliberate close（one win 或 blocking question 落盤）
 
 任何終止必須二選一，寫進 `PROBLEM.md`：
 
 - ✅ **one win**——具體、驗證過的成功（哪條命令通了、哪個輸出對了）。
 - ⛔ **blocking question**——一句話寫死：「是什麼擋住了我」。
 
-隨機中斷、挫折棄坑都不存在。使用者要中途停下：先把 blocking question 落盤再收——逃生艙永遠開著，但跳過必須留痕。
-受困 → blocking question 就是下一堂課的入口。
+隨機中斷、挫折棄坑都不存在。使用者要中途停下：先把 blocking question 落盤再收。受困 → blocking question 就是下一堂課的入口。
 
-### 收尾：微課結算（hard gate，one win 之後不可省略）
+### 收尾：五項結算協議（hard gate，全數過完才算收工）
 
-one win 落盤後、宣告收工前，**必須**完成微課結算，二選一：
+one win 之後，**逐項執行、逐項打勾**，五項全綠才准收工：
 
-1. **就地蒸餾（預設）**——直接執行蒸餾流程第 2–5 步，產出 `lesson.html` 後才收工。
-2. **留痕延後**——僅當使用者明確說不要／改天（如時間壓力）：
-   - `PROBLEM.md` 加一行 `distill: deferred（使用者裁示）`；
-   - `INDEX.md` 微課欄填 `⏳ 待補`。
+1. **LOOP.md 結卷**——補上最終假設、關鍵實測與結案觀察；檔案必須讀起來像一份完整除錯紀錄（Orient 落樁時它就存在，這裡只做結卷）。
+2. **lesson.html 產出**——按蒸餾流程第 2 步生成；自包含、繁中、只教一個洞。
+3. **自動開啟 lesson.html**——`open <path>/lesson.html`（macOS）交到使用者眼前，不僅存檔。
+4. **索引與結論更新**——`INDEX.md` 微課欄填「有」；`CONCLUSIONS.md` 加一行結論。
+5. **畢業檢查**——同一主題第 3 次 → 必須提議畢業成正式 /teach 課程。
 
-**禁止**：INDEX 微課欄留空白、或只更新索引就收工——收工前自檢：微課欄空白＝違規，必須回到本節補結算。（此門存在的理由：loop mode 收尾時注意力最稀薄，軟性「提議」已被觀察到連續三次掉落——0004／0006／0007。）
+唯一例外：使用者明確說「不要微課／改天」→ 允許跳過第 2–3 項，但必須在 `PROBLEM.md` 記 `distill: deferred（使用者裁示）`、INDEX 微課欄填 `⏳ 待補`，其餘三項照走。
+收工前自檢：清點案卷資料夾——`LOOP.md`＋`lesson.html`（或 deferred 留痕）缺一＝尚未收工。
 
 ## 蒸餾流程（distill mode）
 
@@ -96,9 +101,11 @@ one win 落盤後、宣告收工前，**必須**完成微課結算，二選一�
 2. **產出微課**：用 [templates/lesson-template.html](templates/lesson-template.html) 生成 `lesson.html`——自包含單檔、繁中、零外部依賴、列印友好。三元件全上：回憶測驗（選擇題）、點擊揭示（先想再看）、症狀比對（貼真實錯誤訊息讓學習者對位）。只教一個洞。
 3. **沉澱結論**：`CONCLUSIONS.md` 加一條——結論一句話＋為何。寫結論，不寫指令墳場。
 4. **更新索引**：`INDEX.md` 記狀態與主題計數。
-5. **畢業檢查**：同一主題第 3 次 → 必須提議畢業成正式 /teach 課程。提案不可省略；接不接受由使用者定。
+5. **自動開啟**：`open <path>/lesson.html` 把課件交到使用者眼前。
 
 ✅ 完成判準：`lesson.html` 可開啟、兩份索引已更新、以一條 retrieval prompt 收尾。
+
+> 畢業檢查（同主題第 3 次 → 提議畢業）由迴圈收尾協議第 5 項與本流程共用——單一真相來源在收尾協議。
 
 ## 暖身提議（每次啟動，恰好一次）
 
